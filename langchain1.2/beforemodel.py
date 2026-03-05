@@ -3,27 +3,15 @@ from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain.agents import create_agent, AgentState
 from langchain.agents.middleware import before_model
-from langgraph.runtime import Runtime
 from langchain_core.runnables import RunnableConfig
+from langgraph.runtime import Runtime
 from typing import Any
-from langchain_deepseek import ChatDeepSeek
 
+from langchain_deepseek import ChatDeepSeek
 from dotenv import load_dotenv
+
 # 加载.env文件中的环境变量
 load_dotenv()
-
-from langgraph.graph.message import REMOVE_ALL_MESSAGES  
-
-# 删除所有消息
-def delete_messages(state):
-    return {"messages": [RemoveMessage(id=REMOVE_ALL_MESSAGES)]}
-
-# 删除消息
-def delete_messages(state):
-    messages = state["messages"]
-    if len(messages) > 2:
-        # remove the earliest two messages
-        return {"messages": [RemoveMessage(id=m.id) for m in messages[:2]]}
 
 @before_model
 def trim_messages(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
@@ -43,23 +31,20 @@ def trim_messages(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
             *new_messages
         ]
     }
+
 model=ChatDeepSeek(
     model="deepseek-chat",
     temperature=0,
     max_tokens=None,
     timeout=None,
     max_retries=2,
-    # other params...
+    # 其他参数...
 )
-# 示例工具函数
-def get_user_info():
-    """获取用户信息的工具"""
-    pass
 agent = create_agent(
-    model=model,
-    tools=[get_user_info],
+    model,
+    tools=[],
     middleware=[trim_messages],
-    checkpointer=InMemorySaver(),
+    checkpointer=InMemorySaver()
 )
 
 config: RunnableConfig = {"configurable": {"thread_id": "1"}}
